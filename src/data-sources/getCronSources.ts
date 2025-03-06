@@ -69,6 +69,11 @@ export const sourceConfigs: SourceConfig = {
       { identifier: "https://x.com/huggingface" },
       { identifier: "https://x.com/weights_biases" },
       { identifier: "https://x.com/replicate" },
+      { identifier: "https://x.com/bfl_ml" },
+      { identifier: "https://x.com/StabilityAI" },
+      { identifier: "https://x.com/midjourney" },
+      { identifier: "https://x.com/AnthropicAI" },
+
     ],
   },
   Tech: {
