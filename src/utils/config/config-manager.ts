@@ -72,6 +72,7 @@ export class ConfigManager {
     this.addSource(new EnvConfigSource());
     // Database
     if (await this.get<boolean>('ENABLE_DB')) {
+      console.log('DB enabled');
       const db = await MySQLDB.getInstance({
         host: process.env.DB_HOST,
         port: Number(process.env.DB_PORT),
