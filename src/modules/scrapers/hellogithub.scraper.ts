@@ -1,8 +1,8 @@
-import * as cheerio from "cheerio";
+import * as cheerio from "npm:cheerio";
 import {
   AIGithubItem,
   AIGithubItemDetail,
-} from "../render/interfaces/aigithub.type";
+} from "@src/modules/render/interfaces/aigithub.type.ts";
 
 export class HelloGithubScraper {
   private static readonly BASE_URL = "https://hellogithub.com";
@@ -15,7 +15,8 @@ export class HelloGithubScraper {
    */
   public async getHotItems(page: number = 1): Promise<AIGithubItem[]> {
     try {
-      const url = `${HelloGithubScraper.API_URL}/?sort_by=featured&page=${page}&rank_by=newest&tid=juBLV86qa5`;
+      const url =
+        `${HelloGithubScraper.API_URL}/?sort_by=featured&page=${page}&rank_by=newest&tid=juBLV86qa5`;
       const response = await fetch(url);
       const data = await response.json();
 

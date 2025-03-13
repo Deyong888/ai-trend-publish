@@ -1,23 +1,27 @@
+import FirecrawlApp from "npm:firecrawl";
+import {
+  ContentScraper,
+  ScrapedContent,
+  ScraperOptions,
+} from "@src/modules/interfaces/scraper.interface.ts";
+import { ConfigManager } from "@src/utils/config/config-manager.ts";
+import { formatDate } from "@src/utils/common.ts";
+import zod from "npm:zod";
+import { Logger } from "@zilla/logger";
 
-import { z } from "zod";
-import FirecrawlApp from "firecrawl";
-import { ContentScraper, ScrapedContent, ScraperOptions } from "../interfaces/scraper.interface";
-import { ConfigManager } from "@src/utils/config/config-manager";
-import { formatDate } from "@src/utils/common";
-
+const logger = new Logger("fireCrawl-scraper");
 
 // 使用 zod 定义数据结构
-const StorySchema = z.object({
-  headline: z.string(),
-  content: z.string(),
-  link: z.string(),
-  date_posted: z.string(),
+const StorySchema = zod.object({
+  headline: zod.string(),
+  content: zod.string(),
+  link: zod.string(),
+  date_posted: zod.string(),
 });
 
-const StoriesSchema = z.object({
-  stories: z.array(StorySchema),
+const StoriesSchema = zod.object({
+  stories: zod.array(StorySchema),
 });
-
 
 export class FireCrawlScraper implements ContentScraper {
   private app!: FirecrawlApp;
@@ -50,7 +54,7 @@ export class FireCrawlScraper implements ContentScraper {
 
   async scrape(
     sourceId: string,
-    options?: ScraperOptions
+    options?: ScraperOptions,
   ): Promise<ScrapedContent[]> {
     try {
       const currentDate = new Date().toLocaleDateString();
@@ -97,8 +101,8 @@ export class FireCrawlScraper implements ContentScraper {
       const validatedData = StoriesSchema.parse(scrapeResult.extract);
 
       // 转换为 ScrapedContent 格式
-      console.log(
-        `[FireCrawl] 从 ${sourceId} 获取到 ${validatedData.stories.length} 条内容`
+      logger.debug(
+        `[FireCrawl] 从 ${sourceId} 获取到 ${validatedData.stories.length} 条内容`,
       );
       return validatedData.stories.map((story) => ({
         id: this.generateId(story.link),
@@ -114,7 +118,7 @@ export class FireCrawlScraper implements ContentScraper {
         },
       }));
     } catch (error) {
-      console.error("FireCrawl抓取失败:", error);
+      logger.error("FireCrawl抓取失败:", error);
       throw error;
     }
   }

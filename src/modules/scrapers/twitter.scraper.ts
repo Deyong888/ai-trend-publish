@@ -1,51 +1,48 @@
-import path from "path";
-import fs from "fs";
-import dotenv from "dotenv";
-import { ContentScraper, ScrapedContent, ScraperOptions } from "../interfaces/scraper.interface";
-import { ConfigManager } from "@src/utils/config/config-manager";
-import { formatDate } from "@src/utils/common";
+import {
+  ContentScraper,
+  Media,
+  ScrapedContent,
+  ScraperOptions,
+} from "@src/modules/interfaces/scraper.interface.ts";
+import { ConfigManager } from "@src/utils/config/config-manager.ts";
+import { formatDate } from "@src/utils/common.ts";
+import { Logger } from "@zilla/logger";
 
-
+const logger = new Logger("twitter-scraper");
 
 export class TwitterScraper implements ContentScraper {
   private xApiBearerToken: string | undefined;
 
   constructor() {
-    this.refresh();
   }
 
   async refresh(): Promise<void> {
-    await this.validateConfig();
     this.xApiBearerToken = await ConfigManager.getInstance().get(
-      "X_API_BEARER_TOKEN"
+      "X_API_BEARER_TOKEN",
     );
-  }
-
-  async validateConfig(): Promise<void> {
-    if (!(await ConfigManager.getInstance().get("X_API_BEARER_TOKEN"))) {
-      throw new Error(
-        "X API Bearer Token is not set, please set X_API_BEARER_TOKEN in .env file"
-      );
-    }
   }
 
   async scrape(
     sourceId: string,
-    options?: ScraperOptions
+    options?: ScraperOptions,
   ): Promise<ScrapedContent[]> {
+    await this.refresh();
     const usernameMatch = sourceId.match(/x\.com\/([^\/]+)/);
     if (!usernameMatch) {
       throw new Error("Invalid Twitter source ID format");
     }
 
     const username = usernameMatch[1];
-    console.log(`Processing Twitter user: ${username}`);
+    logger.debug(`Processing Twitter user: ${username}`);
 
     try {
       const query = `from:${username} -filter:replies within_time:24h`;
-      const apiUrl = `https://api.twitterapi.io/twitter/tweet/advanced_search?query=${encodeURIComponent(
-        query
-      )}&queryType=Top`;
+      const apiUrl =
+        `https://api.twitterapi.io/twitter/tweet/advanced_search?query=${
+          encodeURIComponent(
+            query,
+          )
+        }&queryType=Top`;
 
       const response = await fetch(apiUrl, {
         headers: {
@@ -60,33 +57,83 @@ export class TwitterScraper implements ContentScraper {
 
       const tweets = await response.json();
       const scrapedContent: ScrapedContent[] = tweets.tweets
-        .slice(0, 10)
-        .map((tweet: any) => ({
-          id: tweet.id,
-          title: tweet.text.split("\n")[0],
-          content: tweet.text,
-          url: `https://x.com/${username}/status/${tweet.id}`,
-          publishDate: formatDate(tweet.createdAt),
-          score: 0,
-          metadata: {
-            platform: "twitter",
-            username,
-          },
-        }));
+        .slice(0, 20)
+        .map((tweet: any) => {
+          const quotedContent = this.getQuotedContent(tweet.quoted_tweet);
+          let media = this.getMediaList(tweet.extendedEntities);
+          // 合并tweet和quotedContent 如果quotedContent存在，则将quotedContent的内容添加到tweet的内容中
+          const content = quotedContent
+            ? `${tweet.text}\n\n 【QuotedContent:${quotedContent.content}】`
+            : tweet.text;
+          // 合并media和quotedContent的media
+          if (quotedContent?.media) {
+            media = [...media, ...quotedContent.media];
+          }
+          return {
+            id: tweet.id,
+            title: tweet.text.split("\n")[0],
+            content: content,
+            url: tweet.url,
+            publishDate: formatDate(tweet.createdAt),
+            score: 0,
+            media: media,
+            metadata: {
+              platform: "twitter",
+              username,
+            },
+          };
+        });
 
       if (scrapedContent.length > 0) {
-        console.log(
-          `Successfully fetched ${scrapedContent.length} tweets from ${username}`
+        logger.debug(
+          `Successfully fetched ${scrapedContent.length} tweets from ${username}`,
         );
       } else {
-        console.log(`No tweets found for ${username}`);
+        logger.debug(`No tweets found for ${username}`);
       }
+
+      logger.debug("scrapedContent", JSON.stringify(scrapedContent, null, 2));
 
       return scrapedContent;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error(`Error fetching tweets for ${username}:`, error);
+      logger.error(`Error fetching tweets for ${username}:`, errorMsg);
       throw error;
     }
+  }
+
+  private getMediaList(extendedEntities: any): Media[] {
+    const mediaList: Media[] = [];
+    if (extendedEntities && extendedEntities.media) {
+      extendedEntities.media.forEach((media: any) => {
+        mediaList.push({
+          url: media.media_url_https,
+          type: media.type,
+          size: {
+            width: media.sizes.large.w,
+            height: media.sizes.large.h,
+          },
+        });
+      });
+    }
+    return mediaList;
+  }
+
+  private getQuotedContent(quoted_tweet: any): ScrapedContent | null {
+    if (quoted_tweet) {
+      return {
+        id: quoted_tweet.id,
+        title: quoted_tweet.text.split("\n")[0],
+        content: quoted_tweet.text,
+        url: quoted_tweet.url,
+        publishDate: formatDate(quoted_tweet.createdAt),
+        score: 0,
+        media: this.getMediaList(quoted_tweet.extendedEntities),
+        metadata: {
+          platform: "twitter",
+        },
+      };
+    }
+    return null;
   }
 }

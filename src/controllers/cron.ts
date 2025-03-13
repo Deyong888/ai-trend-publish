@@ -1,8 +1,9 @@
-import cron from "node-cron";
-import { WeixinWorkflow } from "../services/weixin-article.workflow";
-import { Workflow } from "../services/interfaces/workflow.interface";
-import { WeixinAIBenchWorkflow } from "../services/weixin-aibench.workflow";
-import { WeixinHelloGithubWorkflow } from "../services/weixin-hellogithub.workflow";
+import cron from "npm:node-cron";
+import { WeixinWorkflow } from "@src/services/weixin-article.workflow.ts";
+import { Workflow } from "@src/services/interfaces/workflow.interface.ts";
+import { WeixinAIBenchWorkflow } from "@src/services/weixin-aibench.workflow.ts";
+import { WeixinHelloGithubWorkflow } from "@src/services/weixin-hellogithub.workflow.ts";
+import { BarkNotifier } from "@src/modules/notify/bark.notify.ts";
 
 // 工作流映射表，用于存储不同日期对应的工作流
 const workflowMap = new Map<number, Workflow>();
@@ -23,12 +24,11 @@ const initializeWorkflows = () => {
   workflowMap.set(6, new WeixinWorkflow());
 
   workflowMap.set(7, new WeixinWorkflow());
-
-
-
 };
 
-export const startCronJobs = async () => {
+export const startCronJobs = () => {
+  const barkNotifier = new BarkNotifier();
+  barkNotifier.notify("定时任务启动", "定时任务启动");
   console.log("初始化定时任务...");
   initializeWorkflows();
 
@@ -53,6 +53,6 @@ export const startCronJobs = async () => {
     },
     {
       timezone: "Asia/Shanghai",
-    }
+    },
   );
 };

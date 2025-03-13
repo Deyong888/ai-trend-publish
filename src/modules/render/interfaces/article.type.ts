@@ -1,3 +1,5 @@
+import { Media } from "@src/modules/interfaces/scraper.interface.ts";
+
 export interface GeneratedTemplate {
   id: string;
   title: string;
@@ -9,4 +11,5 @@ export interface GeneratedTemplate {
 
 export interface WeixinTemplate extends GeneratedTemplate {
   keywords: string[];
+  media?: Media[];
 }

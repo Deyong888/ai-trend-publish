@@ -1,7 +1,7 @@
 import ejs from "ejs";
 import fs from "fs";
 import path from "path";
-import { HelloGithubScraper } from "../../scrapers/hellogithub.scraper";
+import { HelloGithubScraper } from "@src/modules/scrapers/hellogithub.scraper.ts";
 
 interface RenderOptions {
   title?: string;
@@ -15,7 +15,7 @@ class HelloGithubRenderer {
   constructor() {
     this.templatePath = path.join(
       __dirname,
-      "../../templates/hellogithub-weixin.ejs"
+      "../../templates/hellogithub-weixin.ejs",
     );
     this.outputPath = path.join(__dirname, "../../../output");
   }
@@ -38,10 +38,10 @@ class HelloGithubRenderer {
           const detail = await scraper.getItemDetail(item.itemId);
           console.log(
             "项目相关链接:",
-            JSON.stringify(detail.relatedUrls, null, 2)
+            JSON.stringify(detail.relatedUrls, null, 2),
           );
           return detail;
-        })
+        }),
       );
 
       // 2. 读取并渲染模板

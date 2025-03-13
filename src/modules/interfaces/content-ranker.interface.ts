@@ -1,5 +1,5 @@
-import { ScrapedContent } from './scraper.interface';
-import { LLMProviderType } from '@src/providers/interfaces/llm.interface';
+import { ScrapedContent } from "@src/modules/interfaces/scraper.interface.ts";
+import { LLMProviderType } from "@src/providers/interfaces/llm.interface.ts";
 
 export interface RankResult {
   id: string;
@@ -28,5 +28,8 @@ export interface ContentRanker {
    * @param batchSize 每批处理的内容数量
    * @returns 评分结果列表
    */
-  rankContentsBatch(contents: ScrapedContent[], batchSize?: number): Promise<RankResult[]>;
+  rankContentsBatch(
+    contents: ScrapedContent[],
+    batchSize?: number,
+  ): Promise<RankResult[]>;
 }

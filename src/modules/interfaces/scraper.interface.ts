@@ -17,5 +17,17 @@ export interface ScrapedContent {
   url: string;
   publishDate: string;
   score: number;
+  media?: Media[];
   metadata: Record<string, any>;
+}
+
+export interface Media {
+  url: string;
+  type: string;
+  size: Size;
+}
+
+export interface Size {
+  width: number;
+  height: number;
 }
